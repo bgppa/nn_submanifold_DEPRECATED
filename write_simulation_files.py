@@ -1,74 +1,40 @@
 import numpy as np
-import rw
+import rwlib as rw
 import nnlib
 import random
 import sys
 import multiprocessing as mp
 import matplotlib.pyplot as plt
-from numpy import cos, sin
+import datalib as dlib
 
-
-theta = 120 # 240
-
-def rotate(x, theta):
-    # x in R^2, theta rotational angle
-    R = np.array([[cos(theta), -sin(theta)], [sin(theta), cos(theta)]])
-    return np.dot(R, x)
-
-
-# Part 1: determine the model to train
-# First of all, consider the Neural Network architecture. It is understood
-# to be sequential and fully connected, taking in input
-# 2-dimensional points, and giving an scalar output according to the
-# point classification. You need to specify a list containing the number
-# of nodes for each hidden layer.
-nn_num_nodes_hidden = [3, 3]
-
-# Generate the random points to classify
-N_points = 10
-# Generate always the same points, but rotate w.r.t to theta
-# the starting seed is stored and then set again in order not to
-# interfere with the later Monte Carlo algorithm
-bak_state = np.random.get_state()
-# I like the seed number 2 for generating points
-np.random.seed(2)
-X_dataset = np.random.uniform(-1, 1, size = [N_points, 2])
-np.random.set_state(bak_state)
-#X_dataset = np.array([[0.1, 0.1], [0.9, 0.9]])
-X_dataset = np.array([rotate(x, theta) for x in X_dataset])
-y_dataset = np.zeros(N_points * 2)
-for i in range(N_points):
-    if (i < N_points/2):
-        y_dataset[2 * i] = 1
-    else:
-        y_dataset[2 * i + 1] = 1
-y_dataset.shape  = (N_points, 2)
-
-#nnlib.plot_data(X_dataset, y_dataset)
-#quit()
-
-# Define now the model and the loss function
+nn_num_nodes_hidden = [2, 2]
 d = nnlib.get_num_params(nn_num_nodes_hidden)
 
-def U(x):
-    return nnlib.loss(X_dataset, y_dataset, x, nn_num_nodes_hidden)
+def U(p):
+    return nnlib.loss(dlib.X_dataset, dlib.y_dataset, p, nn_num_nodes_hidden)
 
-def ACC(x):
-    return nnlib.accuracy(X_dataset, y_dataset, x, nn_num_nodes_hidden)
+def ACC(p):
+    return nnlib.accuracy(dlib.X_dataset, dlib.y_dataset, p,nn_num_nodes_hidden)
 
 
 # The following parameters are exclusively for the Monte Carlo exploration
 h = 0.8
-nsamples = 20000
-thin = 4
-nsimu_convergence = 500
+nsamples = 1000
+thin = 2
 L = 10
-nchains = 48
+
+# Numbers of complete chains to produce, each used to compute expectations
+# in order to check convergence
+nsimu_convergence = 2
+
+# When using the multichain approach, each complete chain is obtained as
+# a random mix of nchain independent chains - to reduce correlation
+nchains = 10
 
 
-SAMPLING_SINGLE_CHAIN = True
-SAMPLING_TO_CHECK_CONVERGENCE = False#True #True #False #True
-SIMPLE_RW = 1 #True # When false, performs the more efficient multichain
+SAMPLING_SINGLE_CHAIN = False #True
+SAMPLING_TO_CHECK_CONVERGENCE = True #True #False #True
+SIMPLE_RW = 0 #True # When false, performs the more efficient multichain
 
 
 if SAMPLING_SINGLE_CHAIN:
@@ -81,8 +47,6 @@ if SAMPLING_SINGLE_CHAIN:
 #        input("PRESS ENTER")
         X, info_str, arate, _ = rw.chainRW(startx, h, U, nsamples, thin, 
                                                                 L, verbose = 2)
-        info_str += '\n'
-        print("Starting point: ", startx)
         print("Classifiation accuracy using the last sample: ", ACC(X[-1]))
 
     # Ignore the following, temporearely
@@ -93,9 +57,8 @@ if SAMPLING_SINGLE_CHAIN:
         print("Classifiation accuracy using the last sample: ", ACC(X[-1]))
 
 
-
     # Store the samples into a separate file, modular approach
-    filename = "biNNary_chain_" + str(theta) +".smp"
+    filename = "single_chain_" + str(dlib.theta) +".smp"
     if (len(sys.argv) == 2):
         filename = str(sys.argv[1]) + "_chain.smp"
     samples_file = open(filename, "w")
@@ -110,10 +73,12 @@ if SAMPLING_SINGLE_CHAIN:
     print("Samples and information stored in " + filename)
 
 if SAMPLING_TO_CHECK_CONVERGENCE:
+    print("Sampling now to check convergence.")
+    print("PRESS ENTER TO CONTINUE")
     X = rw.convRW(nsimu_convergence, d, h, U, nsamples, nchains, thin, L)
     info_str = "CONVERGENCE of: Multichain RW\n"
     # Store the samples into a separate file, to incentivate a chain approach
-    filename = "biNNary_conv_" + str(theta) + ".smp"
+    filename = "expectations_" + str(dlib.theta) + ".smp"
     if (len(sys.argv) == 2):
         filename = str(sys.argv[1]) + "_convergence.smp"
     samples_file = open(filename, "w")

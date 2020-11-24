@@ -1,46 +1,22 @@
+# The goals of this small library is just to give the tools to create 
+# various kind of fully connected neural networks and define their loss
+# functions w.r.t dataset given by other sources.
+# It prepared the loss function, whose geometry will be explored
+# by using Monte Carlo methods (in another script)
+
+
 ## TO CHECK BETTER:
 # - forward evaluation
 # - binary entropy
-
 
 # This is a very simple library to generate naive Neural Networks
 import numpy as np
 from numpy import log, exp
 import matplotlib.pyplot as plt
 
-def ber():
-    if np.random.uniform() < 0.5:
-        return 0.
-    return 1.
 
-# Global variables that defines my Newtwork on which to experiment
-#NUM_INPUTS = 2
-#NUM_HIDDEN_LAYERS = 3
-#NUM_NODES_HIDDEN = [4, 4, 2]
-#NUM_NODES_OUTPUT = 1
-#global_N_points = 10
-#old_seed = np.random.get_state()
-#np.random.seed(3)
-#global_X = np.random.uniform(size = [global_N_points, 2])
-#global_y = np.array([ber() for i in range(global_N_points)])
-#np.random.set_state(old_seed)
-
-def plot_data(X, y):
-    X1 = []
-    X0 = []
-    for i in range(len(y)):
-        if y[i][0] == 1:
-            X1.append(X[i])
-        else:
-            X0.append(X[i])
-    X1 = np.asanyarray(X1)
-    X0 = np.asanyarray(X0)
-    plt.scatter(X0[:, 0], X0[:, 1], color = 'red')
-    plt.scatter(X1[:, 0], X1[:, 1], color = 'blue')
-    plt.title("Data to classify")
-    plt.show()
-
-
+# Given the nn architecture, return the number of parameters needed
+# to define it. I.e. it's the loss function domain's dimension.
 def get_num_params(num_nodes_hidden, num_inputs = 2, num_output = 2):
     num_hidden_layers = len(num_nodes_hidden)
     tot = num_inputs * num_nodes_hidden[0] + num_nodes_hidden[0]
@@ -54,13 +30,12 @@ def get_num_params(num_nodes_hidden, num_inputs = 2, num_output = 2):
     return tot
 
 
-# Create a NN with default structure from R^2 to R.
+# Create a NN with default structure from R^2 to R^2
 def init_network(params, num_nodes_hidden, num_inputs = 2, num_output = 2):
     num_hidden_layers = len(num_nodes_hidden)
     num_nodes_previous = num_inputs # number of nodes in the previous layer
     network = {}
     offset = 0
-    
     # loop through each layer and initialize the weights and biases 
     # associated with each layer
     for layer in range(num_hidden_layers + 1):
@@ -71,7 +46,6 @@ def init_network(params, num_nodes_hidden, num_inputs = 2, num_output = 2):
         else:
             layer_name = 'layer_{}'.format(layer + 1)
             num_nodes = num_nodes_hidden[layer]
-
         # initialize weights and bias for each node
         network[layer_name] = {}
         for node in range(num_nodes):
@@ -83,28 +57,32 @@ def init_network(params, num_nodes_hidden, num_inputs = 2, num_output = 2):
             }
             offset = offset + num_nodes_previous + 1
         num_nodes_previous = num_nodes
-
     return network
 
 
+
+### CHECK BETTER
 def compute_weighted_sum(inputs, weights, bias):
     return np.sum(inputs * weights) + bias
 
-#def sigmoid(x):
-#    return 1.0 / (1.0 + exp(-x))
 
-# Define the ReLU function
+# Standard sigmoid
+def sigmoid(x):
+    return 1.0 / (1.0 + exp(-x))
+
+def relu(x):
+    return max(0., x)
+
+# ReLU function
 def node_activation(weighted_sum):
-    return max(0., weighted_sum)
+    return relu(weighted_sum)
+#   return sigmoid(weighted_sum)
 
-# 
+
+# Softmax function for 2-dim output classification 
 def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum()
-#    v = np.copy(vv)
-#    for i in range(len(v)):
-#        v[i] = np.exp(v[i])
-#    return v / np.sum(v)
 
 
 def forward_propagate(network, inputs):
@@ -131,8 +109,9 @@ def forward_propagate(network, inputs):
     return network_predictions
 
 
-
-def l2square(ytrue, ypred):
+### Now we care about loss functions
+# Mean Squared Error
+def mse(ytrue, ypred):
     n = len(ytrue)
     sm = 0.
     for i in range(n):
@@ -140,27 +119,30 @@ def l2square(ytrue, ypred):
     return (np.sqrt(sm) / n) * 100
 
 
-# STEP 3: define the loss function
-# THE LOSS AND ACCURACY  FUNCTION MUST BE THE ONLY 
-# ONE DEPENDING ON GLOBAL VARIABLES
-def loss(X, y, p, num_nodes_hidden, num_inputs = 2, num_output = 2):
-    # Create a Network
-    n = len(X)
-    loc_nn = init_network(p, num_nodes_hidden, num_inputs, num_output)
-     # Evaluate each datapoint on the created newtork
-    y_hat = np.array([forward_propagate(loc_nn, X[i]) for i in range(n)])
-    yt = y[:,0]
-    yp = y_hat[:,0]
+# Binary Cross Entropy
+def bce(yt, yp):
+    n = len(yt)
     sm = 0
     for i in range(n):
         if (yp[i] > 0 and yp[i] < 1):
-                sm += yt[i]*log(yp[i]) + (1-yt[i])*log(1-yp[i])
-    #sm = np.sum([yt[i]*log(yp[i]) + (1-yt[i])*log(1-yp[i]) for i in range(n)])
+            sm += yt[i]*log(yp[i]) + (1-yt[i])*log(1-yp[i])
     return (-sm * 100) / n
-#    return l2square(y, y_hat)
 
 
-def from_prob_to_01(yyy):
+def loss(X, y, p, num_nodes_hidden, num_inputs = 2, num_output = 2):
+    n = len(X)
+    # Create a Network
+    loc_nn = init_network(p, num_nodes_hidden, num_inputs, num_output)
+    # Evaluate each datapoint on the created newtork
+    y_hat = np.array([forward_propagate(loc_nn, X[i]) for i in range(n)])
+    yt = y[:,0]
+    yp = y_hat[:,0]
+    #return mse(yt, yp)
+    return bce(yt, yp)
+
+
+# Compute the accuracy of the model
+def old_from_prob_to_01(yyy):
     yy = np.copy(yyy)
     for i in range(len(yy)):
         if yy[i][0] < yy[i][1]:
@@ -171,6 +153,16 @@ def from_prob_to_01(yyy):
             yy[i][1] = 0.
     return yy
 
+
+# Compute the accuracy of the model
+def from_prob_to_01(yyy):
+    yy = np.copy(yyy[:, 0])
+    for i in range(len(yy)):
+        if yy[i] < 0.5:
+            yy[i] = 0.
+        else:
+            yy[i] = 1.
+    return yy
 
 def accuracy(X, y, p, num_nodes_hidden, num_inputs = 2, num_output = 2):
     len_dataset = len(X)
@@ -187,9 +179,13 @@ def accuracy(X, y, p, num_nodes_hidden, num_inputs = 2, num_output = 2):
     correct = 0
     for i in range(len(y_hat)):
         # Since are 1/0, to check equality is enough using the first coordinate
-        if (y[i][0] == y_hat[i][0]):
+#        if (y[i][0] == y_hat[i][0]):
+        if (y[i][0] == y_hat[0]):
             correct += 1
-    return correct * 100 / len(y_hat)
+    acc = correct * 100 / len(y_hat)
+#    print("..acc: ", acc)
+#    input("OK")
+    return acc
 
 
 #def from_R_to_prob(yy):
@@ -200,20 +196,11 @@ def accuracy(X, y, p, num_nodes_hidden, num_inputs = 2, num_output = 2):
 
 
 if __name__ == '__main__':
-    print("Entering debug mode")
-    N_points = 10
-    #X_dataset = np.array([[0.1, 0.1], [9, 9]])
-    X_dataset = np.random.uniform(size = [N_points, 2])
-    y_dataset = np.zeros(N_points * 2)
-    for i in range(N_points):
-        if (i < N_points/2):
-            y_dataset[2 * i] = 1
-        else:
-            y_dataset[2 * i + 1] = 1
-    y_dataset.shape  = (N_points, 2)
-    nn_num_nodes_hidden = [3, 4]
+    print("Entering debug mode, data are imported from datalib.py")
+    from datalib import X_dataset, y_dataset
+    nn_num_nodes_hidden = [2, 2]
     d = get_num_params(nn_num_nodes_hidden)
-    L = 1
+    L = 3
     def ACC(x):
         return accuracy(X_dataset, y_dataset, x, nn_num_nodes_hidden)
     def U(x):

@@ -29,9 +29,9 @@ def mean_variance1d(samples1d):
 if STUDY_CONVERGENCE:
     print("Reading the results about CONVERGENCE")
     # Open the file containing the list of samples
-    filename = "expectations_0.smp"
+    filename = "expectations.smp"
     if (len(sys.argv) == 2):
-        filename = str(sys.argv[1])
+        filename = "expectations_" + str(sys.argv[1]) + ".smp"
     print("Loading:", filename)
     samples_file = open(filename, "r")
 
@@ -67,9 +67,9 @@ if STUDY_CONVERGENCE:
 if DETECT_SUBMANIFOLD:
     print("Searching for a SUBMANIFOLD on the CHAIN SAMPLES")
     # Open the file containing the list of samples
-    filename = "markov_chain_0.smp"
+    filename = "markovchain.smp"
     if (len(sys.argv) == 2):
-        filename = str(sys.argv[1])
+        filename = "markovchain_" + str(sys.argv[1]) + ".smp"
     print("Loading:", filename)
     samples_file = open(filename, "r")
 

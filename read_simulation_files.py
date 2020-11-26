@@ -4,18 +4,32 @@ from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import sys
-import mcmc
 from sklearn.decomposition import PCA, KernelPCA
 import nnlib
+import datalib as dlib
 
-STUDY_CONVERGENCE = False
-DETECT_SUBMANIFOLD = True
+
+STUDY_CONVERGENCE = True #False
+
+# this section will require nnlib and datalib to access the potential
+DETECT_SUBMANIFOLD = False #True
+
+
+# Given a list of 1-dimensional samples, return the confidence interval
+def mean_variance1d(samples1d):
+    mean = np.mean(samples1d)
+    sigma = 0.
+    n = len(samples1d)
+    for i in range(n):
+        sigma += (samples1d[i] - mean) ** 2.
+    sigma = np.sqrt(sigma / (n - 1))
+    return mean, sigma
 
 
 if STUDY_CONVERGENCE:
     print("Reading the results about CONVERGENCE")
     # Open the file containing the list of samples
-    filename = "biNNary_conv_120.smp"
+    filename = "expectations_0.smp"
     if (len(sys.argv) == 2):
         filename = str(sys.argv[1])
     print("Loading:", filename)
@@ -36,7 +50,7 @@ if STUDY_CONVERGENCE:
     # Computing the confidence interval for each marginal
     for i in range(m):
         # Compute the 95% confidence interval
-        mean, sigma = mcmc.mean_variance1d(X[:,i])
+        mean, sigma = mean_variance1d(X[:,i])
         print("Merginal number #", i)
         print("Mean: ", mean, "sigma: ", sigma)
         print("95% Confidence Interval: [",
@@ -47,13 +61,13 @@ if STUDY_CONVERGENCE:
         plt.subplot(int(m / 4) + 1, 4, i+1)
         plt.hist(X[:,i], 30, density=True)
     plt.suptitle("Convergence analysis. Gaussian = WIN")
-    plt.show()
-
+    plt.savefig("are_gaussians.png")
+#    plt.show()
 
 if DETECT_SUBMANIFOLD:
     print("Searching for a SUBMANIFOLD on the CHAIN SAMPLES")
     # Open the file containing the list of samples
-    filename = "biNNary_chain_120.smp"
+    filename = "markov_chain_0.smp"
     if (len(sys.argv) == 2):
         filename = str(sys.argv[1])
     print("Loading:", filename)
@@ -80,7 +94,7 @@ if DETECT_SUBMANIFOLD:
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(reducedXrbf[:,0], reducedXrbf[:,1], reducedXrbf[:,2])
     plt.title("3D reduction of the " + str(m) + "D parameter with rbf kernel")
-    plt.savefig("ALLDATA.png")
+    plt.savefig("tmp_ALLDATA.png")
 #    plt.show()    
 
     reconstructedX = kpcaRBF.inverse_transform(reducedXrbf)
@@ -88,36 +102,17 @@ if DETECT_SUBMANIFOLD:
 
     print("Let's find the surface of minimal energy")
     # Information for defining the potential
-    bak_state = np.random.get_state()
-    np.random.seed(2)
-    N_points = 10
-    theta = 120 # 240
-    nn_num_nodes_hidden = [3, 3]
-
-    def rotate(x, theta):
-        # x in R^2, theta rotational angle
-        R = np.array([[cos(theta), -sin(theta)], [sin(theta), cos(theta)]])
-        return np.dot(R, x)
-
-    X_dataset = np.random.uniform(-1, 1, size = [N_points, 2])
-    np.random.set_state(bak_state)
-    X_dataset = np.array([rotate(x, theta) for x in X_dataset])
-    y_dataset = np.zeros(N_points * 2)
-    for i in range(N_points):
-        if (i < N_points/2):
-            y_dataset[2 * i] = 1
-        else:
-            y_dataset[2 * i + 1] = 1
-    y_dataset.shape  = (N_points, 2)
-
+    # Import now the dataset
+    nn_num_nodes_hidden = [2, 2]
+    d = nnlib.get_num_params(nn_num_nodes_hidden)
     def U(x):
-        return nnlib.loss(X_dataset, y_dataset, x, nn_num_nodes_hidden) 
-
+        return nnlib.loss(dlib.X_dataset, dlib.y_dataset, 
+                x, nn_num_nodes_hidden) 
     def ACC(x):
-        return nnlib.accuracy(X_dataset, y_dataset, x, nn_num_nodes_hidden)
+        return nnlib.accuracy(dlib.X_dataset, dlib.y_dataset, 
+                x, nn_num_nodes_hidden)
 
-
-    max_energy = 10
+    max_energy = 1.0
     labels = np.zeros(len(reducedXrbf))
     for i in range(len(reconstructedX)):
         Ui = U(reconstructedX[i])
@@ -150,7 +145,7 @@ if DETECT_SUBMANIFOLD:
     ax.scatter(lowX[:,0], lowX[:,1], lowX[:,2], color='red')
     plt.title("Distribution of the low energy points in" +\
           "the 3D reduced space")
-    plt.savefig("MANIFOLD.png")
+    plt.savefig("tmp_MANIFOLD.png")
 #    plt.show()
 
     # Perform a classic PCA reduction on the low-energy space,
@@ -174,4 +169,3 @@ if DETECT_SUBMANIFOLD:
 
     minimumX = pcaLOW.transform(lowX)
     print("PCA error: ", norm(minimumX - pcaLOW.inverse_transform(minimumX)))
-

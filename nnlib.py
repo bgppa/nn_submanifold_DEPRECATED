@@ -180,8 +180,9 @@ def accuracy(X, y, p, num_nodes_hidden, num_inputs = 2, num_output = 2):
     for i in range(len(y_hat)):
         # Since are 1/0, to check equality is enough using the first coordinate
 #        if (y[i][0] == y_hat[i][0]):
-        if (y[i][0] == y_hat[0]):
+        if (y[i][0] == y_hat[i]):
             correct += 1
+#    print(correct, "correct out of", len(y_hat))
     acc = correct * 100 / len(y_hat)
 #    print("..acc: ", acc)
 #    input("OK")

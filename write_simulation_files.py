@@ -32,8 +32,8 @@ nsimu_convergence = 600
 nchains = 15
 
 
-SAMPLING_SINGLE_CHAIN = False #True
-SAMPLING_TO_CHECK_CONVERGENCE = True #True #False #True
+SAMPLING_SINGLE_CHAIN = True #False #True
+SAMPLING_TO_CHECK_CONVERGENCE = False #True #True #False #True
 SIMPLE_RW = 0 #True # When false, performs the more efficient multichain
 
 
@@ -58,7 +58,7 @@ if SAMPLING_SINGLE_CHAIN:
 
 
     # Store the samples into a separate file, modular approach
-    filename = "single_chain_" + str(dlib.theta) +".smp"
+    filename = "markov_chain_" + str(dlib.theta) +".smp"
     if (len(sys.argv) == 2):
         filename = str(sys.argv[1]) + "_chain.smp"
     samples_file = open(filename, "w")

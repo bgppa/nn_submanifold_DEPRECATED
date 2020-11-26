@@ -12,7 +12,7 @@ import datalib as dlib
 STUDY_CONVERGENCE = True #False
 
 # this section will require nnlib and datalib to access the potential
-DETECT_SUBMANIFOLD = False #True
+DETECT_SUBMANIFOLD = True
 
 
 # Given a list of 1-dimensional samples, return the confidence interval
@@ -116,13 +116,13 @@ if DETECT_SUBMANIFOLD:
     labels = np.zeros(len(reducedXrbf))
     for i in range(len(reconstructedX)):
         Ui = U(reconstructedX[i])
-        print("Energy of point", i, ":", Ui)
-        print("its accuracy: ", ACC(reconstructedX[i]))
+#        print("Energy of point", i, ":", Ui)
+#        print("its accuracy: ", ACC(reconstructedX[i]))
         if Ui < max_energy:
             labels[i] = 1 
             print("Energy of point", i, ":", Ui)
             print("its accuracy: ", ACC(reconstructedX[i]))
-            input("OK?")
+#            input("OK?")
     input("OK?")
 
     # Subdivide the points into two classes, then print each of them
@@ -167,5 +167,5 @@ if DETECT_SUBMANIFOLD:
     print("How well do the points fit a plane? ",
                         sum(pcaLOW.explained_variance_ratio_)* 100, "%")
 
-    minimumX = pcaLOW.transform(lowX)
-    print("PCA error: ", norm(minimumX - pcaLOW.inverse_transform(minimumX)))
+   # minimumX = pcaLOW.transform(lowX)
+   # print("PCA error: ", norm(minimumX - pcaLOW.inverse_transform(minimumX)))

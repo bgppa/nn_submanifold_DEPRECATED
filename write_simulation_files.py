@@ -18,18 +18,18 @@ def ACC(p):
 
 
 # The following parameters are exclusively for the Monte Carlo exploration
-h = 0.8
-nsamples = 1000
-thin = 2
+h = 3
+nsamples = 10000
+thin = 3
 L = 10
 
 # Numbers of complete chains to produce, each used to compute expectations
 # in order to check convergence
-nsimu_convergence = 2
+nsimu_convergence = 600
 
 # When using the multichain approach, each complete chain is obtained as
 # a random mix of nchain independent chains - to reduce correlation
-nchains = 10
+nchains = 15
 
 
 SAMPLING_SINGLE_CHAIN = False #True

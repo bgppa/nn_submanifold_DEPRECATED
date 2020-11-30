@@ -30,8 +30,8 @@ if STUDY_CONVERGENCE:
     print("Reading the results about CONVERGENCE")
     # Open the file containing the list of samples
     filename = "expectations.smp"
-    if (len(sys.argv) == 2):
-        filename = "expectations_" + str(sys.argv[1]) + ".smp"
+    if (len(sys.argv) > 1):
+        filename = str(sys.argv[1])
     print("Loading:", filename)
     samples_file = open(filename, "r")
 
@@ -63,13 +63,17 @@ if STUDY_CONVERGENCE:
     plt.suptitle("Convergence analysis. Gaussian = WIN")
     plt.savefig("are_gaussians.png")
 #    plt.show()
+    plt.clf()
+    plt.cla()
 
 if DETECT_SUBMANIFOLD:
+    print("Are you working with theta = ", dlib.theta, "?")
+    input("press ENTER to continue")
     print("Searching for a SUBMANIFOLD on the CHAIN SAMPLES")
     # Open the file containing the list of samples
     filename = "markovchain.smp"
-    if (len(sys.argv) == 2):
-        filename = "markovchain_" + str(sys.argv[1]) + ".smp"
+    if (len(sys.argv) == 3):
+        filename = str(sys.argv[1])
     print("Loading:", filename)
     samples_file = open(filename, "r")
 
@@ -94,8 +98,14 @@ if DETECT_SUBMANIFOLD:
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(reducedXrbf[:,0], reducedXrbf[:,1], reducedXrbf[:,2])
     plt.title("3D reduction of the " + str(m) + "D parameter with rbf kernel")
+    plt.xlabel("x")
+    plt.ylabel("y")
+#    plt.zlabel("z")
+    plt.grid()
     plt.savefig("tmp_ALLDATA.png")
 #    plt.show()    
+    plt.clf()
+    plt.cla()
 
     reconstructedX = kpcaRBF.inverse_transform(reducedXrbf)
     print("Reconstructing error: ", norm(X - reconstructedX))
@@ -143,10 +153,15 @@ if DETECT_SUBMANIFOLD:
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(lowX[:,0], lowX[:,1], lowX[:,2], color='red')
-    plt.title("Distribution of the low energy points in" +\
-          "the 3D reduced space")
-    plt.savefig("tmp_MANIFOLD.png")
+    plt.title("Low energy point distribution, reduced to 3D")
+    plt.xlabel("x")
+    plt.ylabel("y")
+  #  plt.zlabel("x")
+    plt.grid()
+    plt.savefig("reduction3D.png")
 #    plt.show()
+    plt.clf()
+    plt.cla()
 
     # Perform a classic PCA reduction on the low-energy space,
     # which seem to be located on a line...
@@ -160,12 +175,21 @@ if DETECT_SUBMANIFOLD:
     print("PCA error: ", norm(minimumX - pcaLOW.inverse_transform(minimumX)))
 
 
-
-    pcaLOW = PCA(n_components=2)
-    pcaLOW.fit(lowX)
-    pcaLOW.explained_variance_ratio_
+    # Perform a linear PCA to reduce lowX to a 2D plane
+    pca2DLOW = PCA(n_components=2)
+    pca2DLOW.fit(lowX)
+    pca2DLOW.explained_variance_ratio_
     print("How well do the points fit a plane? ",
-                        sum(pcaLOW.explained_variance_ratio_)* 100, "%")
+                        sum(pca2DLOW.explained_variance_ratio_)* 100, "%")
+    lowX2D = pca2DLOW.transform(lowX)
+    #ax.scatter(lowX2D[:, 0], lowX2D[:, 1])
+    plt.scatter(lowX2D[:, 0], lowX2D[:, 1])
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.grid()
+    plt.title("Low energy points distribution, reduced to 2D. Theta = " +\
+                    str(dlib.theta))
+    plt.savefig("reduction2D.png")
 
    # minimumX = pcaLOW.transform(lowX)
    # print("PCA error: ", norm(minimumX - pcaLOW.inverse_transform(minimumX)))

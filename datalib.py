@@ -11,7 +11,7 @@ from numpy import cos, sin
 
 my_seed = 2
 N_points = 10
-theta = 240 #120 #0 #120 # 240
+theta = 0 #120 #240 #120 #0 #120 # 240
 
 
 ###############################

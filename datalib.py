@@ -37,7 +37,7 @@ for i in range(N_points):
 y_dataset.shape  = (N_points, 2)
 
 
-def plot_data(X, y, theta, xserver):
+def plot_data(X = X_dataset, y = y_dataset, theta = theta, xserver = 0):
     X1 = []
     X0 = []
     for i in range(len(y)):

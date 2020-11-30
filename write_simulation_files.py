@@ -36,6 +36,8 @@ SAMPLING_SINGLE_CHAIN = True #False #True
 SAMPLING_TO_CHECK_CONVERGENCE = True #True #False #True
 SIMPLE_RW = 0 #True # When false, performs the more efficient multichain
 
+print("THETA = ", dlib.theta)
+dlib.plot_data()
 
 if SAMPLING_SINGLE_CHAIN:
     print("Constructing a single full chain")
